@@ -91,15 +91,17 @@ export class Team {
  * Information about a specific body type.
  */
 export class BodyTypeMetaData {
-  constructor(public type: schema.BodyType,
-    public buildCostAdamantium:number,
-    public buildCostElixir: number,
-    public buildCostMana: number,
-    public actionCooldown:number, 
-    public movementCooldown:number, 
-    public health: number, 
-    public actionRadiusSquared:number, 
-    public visionRadiusSquared:number, 
-    public bytecodeLimit:number) {
+  constructor(
+    public type: schema.BodyType,
+    public buildCostAd: number,
+    public buildCostMn: number,
+    public buildCostEx: number,
+    public actionCooldown: number,
+    public movementCooldown: number,
+    public health: number,
+    public actionRadiusSquared: number,
+    public visionRadiusSquared: number,
+    public bytecodeLimit: number,
+  ) {
   }
 }
