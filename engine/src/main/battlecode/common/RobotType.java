@@ -13,6 +13,9 @@ public enum RobotType {
     // Health, Damage, Action Radius (squared), Vision Radius (squared), Bytecode Limit
 
     /**
+     * Carriers transport resources for your army. They can collect and deposit
+     * from wells and headquarters and attack by throwing resources.
+     * 
      * Carrier (TODO: description)
      * @battlecode.doc.robottype
      */
@@ -20,6 +23,9 @@ public enum RobotType {
     //               BCA  BCM  BCE   AC   MC  HP  DMG  AR  VR     BL
 
     /**
+     * Launchers are your primary attack robots. They can deal damage to enemy
+     * robots directly to the north, south, east, or west within range.
+     * 
      * Launcher (TODO: description)
      * @battlecode.doc.robottype
      */
@@ -27,6 +33,9 @@ public enum RobotType {
     //               BCA  BCM  BCE   AC   MC  HP  DMG  AR  VR     BL
 
     /**
+     * Temporal destabilizes interfere with the fabric of reality to wreak havoc 
+     * on your enemies. Their attack slows robot movement in a targeted area.
+     * 
      * Destablizer (TODO: description)
      * @battlecode.doc.robottype
      */
@@ -34,12 +43,19 @@ public enum RobotType {
     //               BCA  BCM  BCE   AC   MC  HP  DMG  AR  VR     BL
 
     /**
+     * Temporal boosters speed up time for robots in their vicinity to help
+     * your robots gain an advantage.
+     * 
      * Booster (TODO: description)
      * @battlecode.doc.robottype
      */
     BOOSTER         (  0,   0, 250, 100,  25, 30,   0, 25, 20, 10000),
     //               BCA  BCM  BCE   AC   MC  HP  DMG  AR  VR     BL
+    
     /**
+     * Amplifiers facilitate communication. Amplifiers allow nearby robots
+     * to write to your team's shared array.
+     * 
      * Amplifier (TODO: description)
      * @battlecode.doc.robottype
      */
