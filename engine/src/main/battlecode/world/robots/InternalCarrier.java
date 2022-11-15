@@ -6,6 +6,7 @@ import battlecode.common.Team;
 import battlecode.schema.Action;
 import battlecode.world.GameWorld;
 import battlecode.world.InternalRobot;
+import battlecode.world.Inventory;
 
 public class InternalCarrier extends InternalRobot {
 
@@ -26,20 +27,21 @@ public class InternalCarrier extends InternalRobot {
     // ******************************************
 
     /**
-     * Attacks another robot (launcher). Assumes bot is in range.
+     * Attacks another robot (carrier). Assumes bot is in range.
      * Empties inventory accordingly.
      * 
      * @param bot the robot to be attacked
      */
     public void attack(InternalRobot bot) {
+        Inventory robotInv = bot.getInventory();
         if (!(bot == null)) {
-            int dmg = this.getType().getDamage(bot.getAd()+bot.getElixir()+bot.getMn());
+            int dmg = this.getType().getDamage(robotInv.getAdamantium()+robotInv.getElixir()+robotInv.getMana());
             bot.addHealth(-dmg);
             this.getGameWorld().getMatchMaker().addAction(getID(), Action.ATTACK, bot.getID());
         }
-        bot.addAd(-bot.getAd());
-        bot.addElixir(-bot.getElixir());
-        bot.addMn(-bot.getMn());
+        robotInv.addAdamantium(-robotInv.getAdamantium());
+        robotInv.addElixir(-robotInv.getElixir());
+        robotInv.addMana(-robotInv.getMana());
     }
 
 }

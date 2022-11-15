@@ -162,14 +162,6 @@ public strictfp class InternalRobot implements Comparable<InternalRobot> {
         return this.numVisibleFriendlyRobots;
     }
 
-    public int getLeadMutateCost() {
-        return this.type.getLeadMutateCost(this.level + 1);
-    }
-
-    public int getGoldMutateCost() {
-        return this.type.getGoldMutateCost(this.level + 1);
-    }
-
     public RobotInfo getRobotInfo() {
         if (cachedRobotInfo != null
                 && cachedRobotInfo.ID == ID

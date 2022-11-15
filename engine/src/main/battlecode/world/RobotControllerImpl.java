@@ -1,11 +1,26 @@
 package battlecode.world;
 
-import battlecode.common.*;
-import static battlecode.common.GameActionExceptionType.*;
+import static battlecode.common.GameActionExceptionType.CANT_SENSE_THAT;
+import static battlecode.common.GameActionExceptionType.OUT_OF_RANGE;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import battlecode.common.AnomalyScheduleEntry;
+import battlecode.common.AnomalyType;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
+import battlecode.common.MapLocation;
+import battlecode.common.ResourceType;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotMode;
+import battlecode.common.RobotType;
+import battlecode.common.Team;
 import battlecode.instrumenter.RobotDeathException;
 import battlecode.schema.Action;
-
-import java.util.*;
 
 
 /**
@@ -92,21 +107,6 @@ public final strictfp class RobotControllerImpl implements RobotController {
         return this.gameWorld.getObjectInfo().getRobotCount(getTeam());
     }
 
-    @Override
-    public int getArchonCount() {
-        return this.gameWorld.getObjectInfo().getRobotTypeCount(getTeam(), RobotType.ARCHON);
-    }
-
-    @Override
-    public int getTeamLeadAmount(Team team) {
-        return this.gameWorld.getTeamInfo().getLead(team);
-    }
-
-    @Override
-    public int getTeamGoldAmount(Team team) {
-        return this.gameWorld.getTeamInfo().getGold(team);
-    }
-
     // *********************************
     // ****** UNIT QUERY METHODS *******
     // *********************************
@@ -127,11 +127,6 @@ public final strictfp class RobotControllerImpl implements RobotController {
     }
 
     @Override
-    public RobotMode getMode() {
-        return this.robot.getMode();
-    }
-
-    @Override
     public MapLocation getLocation() {
         return this.robot.getLocation();
     }
@@ -142,18 +137,23 @@ public final strictfp class RobotControllerImpl implements RobotController {
     }
 
     @Override
-    public int getLevel() {
-        return this.robot.getLevel();  
+    public int getAdAmount() {
+        return this.robot.getInventory().getMana();  
     }
 
-    private InternalRobot getRobotByID(int id) {
-        if (!this.gameWorld.getObjectInfo().existsRobot(id))
-            return null;
-        return this.gameWorld.getObjectInfo().getRobotByID(id);
+    @Override
+    public int getMnAmount() {
+        return this.robot.getInventory().getMana();  
     }
 
-    private int locationToInt(MapLocation loc) {
-        return loc.x + loc.y * this.gameWorld.getGameMap().getWidth();
+    @Override
+    public int getExAmount() {
+        return this.robot.getInventory().getElixir();  
+    }
+
+    @Override
+    public boolean checkHasAnchor() {
+        return this.robot.hasAnchor();  
     }
 
     // ***********************************
@@ -603,6 +603,13 @@ public final strictfp class RobotControllerImpl implements RobotController {
             throw new GameActionException(CANT_DO_THAT,
                     "Robot is of type " + getType() + " which cannot attack.");
         InternalRobot bot = this.gameWorld.getRobot(loc);
+        if (getType() == RobotType.CARRIER){
+            Inventory robotInv = bot.getInventory();
+            int totalResources = robotInv.getAdamantium()+robotInv.getMana()+robotInv.getElixir();
+            if (totalResources == 0)
+                throw new GameActionException(CANT_DO_THAT,
+                    "Robot is a carrier but has no inventory to attack with");
+        }
         if (!(bot == null) && bot.getTeam() == getTeam())
             throw new GameActionException(CANT_DO_THAT,
                     "Robot is not on the enemy team.");

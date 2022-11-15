@@ -600,7 +600,7 @@ public strictfp interface RobotController {
      * given direction. Checks that the robot is of a type that can build,
      * that the robot can build the desired type, that the target location is
      * on the map, that the target location is not occupied, that the robot has
-     * the amount of lead/gold it's trying to spend, and that there are no
+     * the amount of elixir/ad/mana it's trying to spend, and that there are no
      * cooldown turns remaining.
      *
      * @param type the type of robot to build
