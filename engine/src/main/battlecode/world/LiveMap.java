@@ -337,7 +337,7 @@ public strictfp class LiveMap {
      */
 
      public int[] getWellResourcesArray(){
-        return this.wellResourcesArray.clone();
+        return Arrays.copyOf(this.wellResourcesArray, this.wellResourcesArray.length);
      }
 
      /**
