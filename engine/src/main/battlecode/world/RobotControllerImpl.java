@@ -1,11 +1,14 @@
 package battlecode.world;
 
 import battlecode.common.*;
+
 import static battlecode.common.GameActionExceptionType.*;
 import battlecode.instrumenter.RobotDeathException;
 import battlecode.schema.Action;
 
 import java.util.*;
+
+import org.apache.commons.lang3.NotImplementedException;
 
 
 /**
@@ -138,12 +141,14 @@ public final strictfp class RobotControllerImpl implements RobotController {
     }
 
     private int locationToInt(MapLocation loc) {
-        return loc.x + loc.y * this.gameWorld.getGameMap().getWidth();
+        return this.gameWorld.locationToIndex(loc);
     }
 
     // ***********************************
     // ****** GENERAL VISION METHODS *****
     // ***********************************
+
+    //TODO: Make sure all parameter have assertNotNull on them
 
     @Override
     public boolean onTheMap(MapLocation loc) throws GameActionException {
@@ -254,7 +259,7 @@ public final strictfp class RobotControllerImpl implements RobotController {
         assertNotNull(center);
         assertRadiusNonNegative(radiusSquared);
         int actualRadiusSquared = radiusSquared == -1 ? getType().visionRadiusSquared : Math.min(radiusSquared, getType().visionRadiusSquared);
-        InternalRobot[] allSensedRobots = gameWorld.getAllRobotsWithinRadiusSquared(center, actualRadiusSquared);
+        InternalRobot[] allSensedRobots = gameWorld.getAllRobotsWithinRadiusSquared(center, actualRadiusSquared, team);
         List<RobotInfo> validSensedRobots = new ArrayList<>();
         for (InternalRobot sensedRobot : allSensedRobots) {
             // check if this robot
@@ -263,7 +268,7 @@ public final strictfp class RobotControllerImpl implements RobotController {
             // check if can sense
             if (!canSenseLocation(sensedRobot.getLocation()))
                 continue; 
-            // check if right team
+            // check if right team TODO probably don't need
             if (team != null && sensedRobot.getTeam() != team)
                 continue;
             validSensedRobots.add(sensedRobot.getRobotInfo());
@@ -281,7 +286,7 @@ public final strictfp class RobotControllerImpl implements RobotController {
     public int senseIsland(MapLocation loc) throws GameActionException {
         assertCanSenseLocation(loc);
         Island island = this.gameWorld.getIsland(loc);
-        return island == null ? -1 : island.idx;
+        return island == null ? -1 : island.ID;
     }
 
     @Override
@@ -317,7 +322,7 @@ public final strictfp class RobotControllerImpl implements RobotController {
                 continue;
             }
 
-            islandLocations.put(island.idx, validLocations.toArray(new MapLocation[validLocations.size()]));
+            islandLocations.put(island.ID, validLocations.toArray(new MapLocation[validLocations.size()]));
         }
 
         return islandLocations;
@@ -357,50 +362,51 @@ public final strictfp class RobotControllerImpl implements RobotController {
         return island.anchorPlanted;
     }
 
-    // @Override
-    // public Well[] senseNearbyWells() {
-    //     return senseNearbyWells(null);
-    // }
+    @Override
+    public Well[] senseNearbyWells() {
+        return senseNearbyWells(null);
+    }
 
-    // @Override
-    // public Well[] senseNearbyWells(int radiusSquared) throws GameActionException {
-    //     return senseNearbyWells(radiusSquared, null);
-    // }
+    @Override
+    public Well[] senseNearbyWells(int radiusSquared) throws GameActionException {
+        return senseNearbyWells(radiusSquared, null);
+    }
 
-    // @Override
-    // public Well[] senseNearbyWells(MapLocation center, int radiusSquared) throws GameActionException {
-    //     return senseNearbyWells(center, radiusSquared, null);
-    // }
+    @Override
+    public Well[] senseNearbyWells(MapLocation center, int radiusSquared) throws GameActionException {
+        return senseNearbyWells(center, radiusSquared, null);
+    }
 
-    // @Override
-    // public Well[] senseNearbyWells(ResourceType resourceType) {
-    //     try {
-    //         return senseNearbyWells(-1, resourceType);
-    //     } catch (GameActionException e) {
-    //         return new Well[0];
-    //     }
-    // }
+    @Override
+    public Well[] senseNearbyWells(ResourceType resourceType) {
+        try {
+            return senseNearbyWells(-1, resourceType);
+        } catch (GameActionException e) {
+            return new Well[0];
+        }
+    }
 
-    // @Override
-    // public Well[] senseNearbyWells(int radiusSquared, ResourceType resourceType) throws GameActionException {
-    //     assertRadiusNonNegative(radiusSquared);
-    //     return senseNearbyWells(getLocation(), radiusSquared, resourceType);
-    // }
+    @Override
+    public Well[] senseNearbyWells(int radiusSquared, ResourceType resourceType) throws GameActionException {
+        assertRadiusNonNegative(radiusSquared);
+        return senseNearbyWells(getLocation(), radiusSquared, resourceType);
+    }
 
-    // @Override
-    // public Well[] senseNearbyWells(MapLocation center, int radiusSquared, ResourceType resourceType) throws GameActionException {
-    //     assertNotNull(center);
-    //     assertRadiusNonNegative(radiusSquared);
-    //     int actualRadiusSquared = radiusSquared == -1 ? getType().visionRadiusSquared : Math.min(radiusSquared, getType().visionRadiusSquared);
+    @Override
+    public Well[] senseNearbyWells(MapLocation center, int radiusSquared, ResourceType resourceType) throws GameActionException {
+        assertNotNull(center);
+        assertRadiusNonNegative(radiusSquared);
+        int actualRadiusSquared = radiusSquared == -1 ? getType().visionRadiusSquared : Math.min(radiusSquared, getType().visionRadiusSquared);
 
-    //     // TODO update based on well implementation
-    //     Well[] allSensedWells = gameWorld.getAllWellsWithinRadiusSquared(center, actualRadiusSquared);
-    //     List<Well> validSensedWells = Arrays.asList(allSensedWells);
-    //     validSensedWells.removeIf(well -> !canSenseLocation(well.getMapLocation()) ||
-    //         (resourceType != null && well.getResourceType() != resourceType));
-
-    //     return validSensedWells.toArray(new Well[validSensedWells.size()]);
-    // }
+        // TODO update based on well implementation
+        Well[] allSensedWells = gameWorld.getAllWellsWithinRadiusSquared(center, actualRadiusSquared);
+        List<Well> validSensedWells = Arrays.asList(allSensedWells);
+        validSensedWells.removeIf(well -> !canSenseLocation(well.getMapLocation()) ||
+            (resourceType != null && well.getResourceType() != resourceType));
+        List<Well> validSensedWellsCopy = new ArrayList<Well>();
+        validSensedWells.forEach( (well) -> validSensedWellsCopy.add(well.copy()) );
+        return validSensedWellsCopy.toArray(new Well[validSensedWellsCopy.size()]);
+    }
 
     @Override
     public MapLocation adjacentLocation(Direction dir) {
@@ -466,6 +472,8 @@ public final strictfp class RobotControllerImpl implements RobotController {
         assertNotNull(dir);
         assertIsMovementReady();
         MapLocation loc = adjacentLocation(dir);
+        if (this.getType() == RobotType.HEADQUARTERS)
+            throw new GameActionException(CANT_DO_THAT, "Headquarters can't move");
         if (!onTheMap(loc))
             throw new GameActionException(OUT_OF_RANGE,
                     "Can only move to locations on the map; " + loc + " is not on the map.");
@@ -488,12 +496,10 @@ public final strictfp class RobotControllerImpl implements RobotController {
     @Override
     public void move(Direction dir) throws GameActionException {
         assertCanMove(dir);
-        MapLocation center = adjacentLocation(dir);
-        this.gameWorld.moveRobot(getLocation(), center);
-        this.robot.setLocation(center);
+        MapLocation nextLoc = adjacentLocation(dir);
+        this.robot.setLocation(nextLoc);
         // this has to happen after robot's location changed because rubble
         this.robot.addMovementCooldownTurns(getType().movementCooldown);
-        this.gameWorld.getMatchMaker().addMoved(getID(), getLocation());
     }
 
     // ***********************************
@@ -504,17 +510,26 @@ public final strictfp class RobotControllerImpl implements RobotController {
         assertNotNull(type);
         assertCanActLocation(loc);
         assertIsActionReady();
+
         if (getType() != RobotType.HEADQUARTERS)
             throw new GameActionException(CANT_DO_THAT,
                     "Robot is of type " + getType() + " which cannot build. Only headquarters can build.");
         for (ResourceType rType : ResourceType.values()) {
-            if (this.robot.getResource(ResourceType.ADAMANTIUM) < type.buildCostAdamantium)
+            if (rType == ResourceType.NO_RESOURCE)
+                continue;
+            if (getResourceAmount(rType) < type.getBuildCost(rType)) {
                 throw new GameActionException(NOT_ENOUGH_RESOURCE,
                         "Insufficient amount of " + rType);
+            }
         }
-        if (isLocationOccupied(loc))
+        if (isLocationOccupied(loc)) {
             throw new GameActionException(CANT_MOVE_THERE,
                     "Cannot spawn to an occupied location; " + loc + " is occupied.");
+        }
+        if (!sensePassability(loc)) {
+            throw new GameActionException(CANT_MOVE_THERE,
+                    "Cannot spawn to " + loc + "; It has a wall.");
+        }
     }
 
     @Override
@@ -530,11 +545,52 @@ public final strictfp class RobotControllerImpl implements RobotController {
         assertCanBuildRobot(type, loc);
         this.robot.addActionCooldownTurns(getType().actionCooldown);
         Team team = getTeam();
-        // TODO: update teamInfo counts if we need to do that
-        // this.gameWorld.getTeamInfo().addLead(team, -type.buildCostLead);
-        // this.gameWorld.getTeamInfo().addGold(team, -type.buildCostGold);
+        for (ResourceType rType : ResourceType.values()) {
+            if (rType == ResourceType.NO_RESOURCE)
+                continue;
+            this.robot.addResourceAmount(rType, -1*type.getBuildCost(rType));
+            this.gameWorld.getTeamInfo().addResource(rType, team, -1*type.getBuildCost(rType));
+        }
         int newId = this.gameWorld.spawnRobot(type, loc, team);
         this.gameWorld.getMatchMaker().addAction(getID(), Action.SPAWN_UNIT, newId);
+    }
+
+    private void assertCanBuildAnchor(Anchor anchor) throws GameActionException {
+        assertNotNull(anchor);
+        assertIsActionReady();
+        if (getType() != RobotType.HEADQUARTERS)
+            throw new GameActionException(CANT_DO_THAT,
+                    "Robot is of type " + getType() + " which cannot build. Only headquarters can build.");
+        for (ResourceType rType : ResourceType.values()) {
+            if (rType == ResourceType.NO_RESOURCE)
+                continue;
+            if (getResourceAmount(rType) < anchor.getBuildCost(rType)) {
+                throw new GameActionException(NOT_ENOUGH_RESOURCE,
+                        "Insufficient amount of " + rType);
+            }
+        }
+    }
+
+    @Override
+    public boolean canBuildAnchor(Anchor anchor) {
+        try {
+            assertCanBuildAnchor(anchor);
+            return true;
+        } catch (GameActionException e) { return false; }
+    }
+
+    @Override
+    public void buildAnchor(Anchor anchor) throws GameActionException {
+        assertCanBuildAnchor(anchor);
+        this.robot.addActionCooldownTurns(getType().actionCooldown);
+        Team team = getTeam();
+        for (ResourceType rType : ResourceType.values()) {
+            if (rType == ResourceType.NO_RESOURCE)
+                continue;
+            this.robot.addResourceAmount(rType, -1*anchor.getBuildCost(rType));
+            this.gameWorld.getTeamInfo().addResource(rType, team, -1*anchor.getBuildCost(rType));
+        }
+        this.gameWorld.getMatchMaker().addAction(getID(), Action.BUILD_ANCHOR, anchor.getAccelerationIndex());
     }
 
     // *****************************
@@ -549,10 +605,20 @@ public final strictfp class RobotControllerImpl implements RobotController {
             throw new GameActionException(CANT_DO_THAT,
                     "Robot is of type " + getType() + " which cannot attack.");
         InternalRobot bot = this.gameWorld.getRobot(loc);
-        if (!(bot == null) && bot.getTeam() == getTeam())
+        if (bot == null) {
+            throw new GameActionException(CANT_DO_THAT,
+            "There is no robot to attack");
+        }
+        if (getType() == RobotType.CARRIER){
+            int totalResources = getResourceAmount(ResourceType.ADAMANTIUM)+getResourceAmount(ResourceType.MANA)+getResourceAmount(ResourceType.ELIXIR);
+            if (totalResources == 0)
+                throw new GameActionException(CANT_DO_THAT,
+                    "Robot is a carrier but has no inventory to attack with");
+        }
+        if (!(bot == null) && bot.getTeam().equals(getTeam())) {
             throw new GameActionException(CANT_DO_THAT,
                     "Robot is not on the enemy team.");
-        
+        }
     }
 
     @Override
@@ -571,166 +637,249 @@ public final strictfp class RobotControllerImpl implements RobotController {
         this.robot.attack(bot);
     }
 
-    // ***********************
-    // **** MINER METHODS **** 
-    // ***********************
+    // ***********************************
+    // ******** BOOSTERS METHODS *********
+    // ***********************************
 
-    // TODO: still working on wells
+    private void assertCanBoost() throws GameActionException {
+        assertIsActionReady();
+        if (getType() != RobotType.BOOSTER)
+            throw new GameActionException(CANT_DO_THAT,
+                    "Robot is of type " + getType() + " which cannot boost.");
+    }
 
-    // private boolean isWell(MapLocation loc) {
-    //     //TODO checks if the location is a well
-    //     return this.gameWorld.isWell(loc);
-    // }
+    @Override
+    public boolean canBoost() {
+        try {
+            assertCanBoost();
+            return true;
+        } catch (GameActionException e) { return false; }  
+    }
 
-    // private boolean isHeadquarter(MapLocation loc){
-    //     //TODO checks if the location is a headquarter
-    //     return this.gameWorld.isHeadquarters(loc);
+    @Override
+    public void boost() throws GameActionException {
+        assertCanBoost();
+        MapLocation boostLoc = this.getLocation();
+        this.gameWorld.addBoost(boostLoc, getTeam());
+        this.gameWorld.getMatchMaker().addAction(getID(), Action.BOOST, locationToInt(boostLoc));
+        this.robot.addActionCooldownTurns(getType().actionCooldown);
+    }
 
-    // }
+    // ***********************************
+    // ****** DESTABILIZER METHODS *******
+    // ***********************************
 
-    // private void assertCanTransferResource(MapLocation loc, ResourceType type, int amount) throws GameActionException {
-    //     assertNotNull(loc);
-    //     assertCanActLocation(loc);
-    //     assertIsActionReady();
+    private void assertCanDestabilize(MapLocation loc) throws GameActionException {
+        assertNotNull(loc);
+        assertCanActLocation(loc);
+        assertIsActionReady();
+        if (getType() != RobotType.DESTABILIZER)
+            throw new GameActionException(CANT_DO_THAT,
+                    "Robot is of type " + getType() + " which cannot destabilize.");
+    }
 
-    //     if(getType() != RobotType.CARRIER)
-    //         throw new GameActionException(CANT_DO_THAT, "This robot is not a carrier");
-    //     if(amount > 0 && this.robot.getInventory().getResource(type) < amount) // Carrier is transfering to another location
-    //         throw new GameActionException(CANT_DO_THAT, "Carrier does not have enough of that resource");
-    //     if(amount < 0 && this.robot.getInventory().canAdd(-1*amount)) // Carrier is picking up the resource from another location (probably headquarters)
-    //         throw new GameActionException(CANT_DO_THAT, "Carrier does not have enough capacity to collect the resource");
-    //     if(!isWell(loc) && !isHeadquarter(loc))
-    //         throw new GameActionException(CANT_DO_THAT, "Cannot transfer to a location that is not a well or a headquarter");
-    // }
+    @Override
+    public boolean canDestabilize(MapLocation loc) {
+        try {
+            assertCanDestabilize(loc);
+            return true;
+        } catch (GameActionException e) { return false; }  
+    }
 
-    // @Override
-    // public boolean canTransferAd(MapLocation loc, int amount){
-    //     try {
-    //         assertCanTransferResource(loc, ResourceType.ADAMANTIUM, amount);
-    //         return true;
-    //     } catch(GameActionException e) {return false;}
-    // }
+    @Override
+    public void destabilize(MapLocation loc) throws GameActionException {
+        assertCanDestabilize(loc);
+        this.gameWorld.addDestabilize(loc, getTeam());
+        this.gameWorld.getMatchMaker().addAction(getID(), Action.DESTABILIZE, locationToInt(loc));
+        this.robot.addActionCooldownTurns(getType().actionCooldown);
+    }
 
-    // @Override
-    // public void transferAd(MapLocation loc, int amount) throws GameActionException {
-    //     assertCanTransferResource(loc, ResourceType.ADAMANTIUM, amount);
-    //     this.robot.addActionCooldownTurns(getType().actionCooldown);
-    //     Inventory robotInv = this.robot.getInventory();
-    //     if(isWell(loc)){
-    //         Inventory wellInv = this.gameWorld.getWell(loc).getInventory();
-    //         wellInv.addAdamantium(amount);
-    //         robotInv.addAdamantium(-amount);
-    //     }
-    //     else if(isHeadquarter(loc)){
-    //         Inventory headquarterInv = this.gameWorld.getHeadquarter(loc).getInventory();
-    //         headquarterInv.addAdamantium(amount);
-    //     }
-    //     this.gameWorld.getMatchMaker().addAction(getID(), Action.MINE_LEAD, locationToInt(loc));
-    //     //TODO update addAction once we have new action types!
-    // }
+    // *************************
+    // **** CARRIER METHODS **** 
+    // *************************
 
-    // @Override
-    // public boolean canTransferMn(MapLocation loc, int amount){
-    //     try {
-    //         assertCanTransferResource(loc, ResourceType.MANA, amount);
-    //         return true;
-    //     } catch(GameActionException e) {return false;}
-    // }
+    private boolean isWell(MapLocation loc) {
+        return this.gameWorld.isWell(loc);
+    }
 
-    // @Override
-    // public void transferMn(MapLocation loc, int amount) throws GameActionException {
-    //     assertCanTransferResource(loc, ResourceType.MANA, amount);
-    //     this.robot.addActionCooldownTurns(getType().actionCooldown);
-    //     Inventory robotInv = this.robot.getInventory();
-    //     if(isWell(loc)){
-    //         Inventory wellInv = this.gameWorld.getWell(loc).getInventory();
-    //         wellInv.addMana(amount);
-    //         robotInv.addMana(-amount);
-    //     }
-    //     else if(isHeadquarter(loc)){
-    //         Inventory headquarterInv = this.gameWorld.getHeadquarter(loc).getInventory();
-    //         headquarterInv.addMana(amount);
-    //     }
-    //     this.gameWorld.getMatchMaker().addAction(getID(), Action.MINE_LEAD, locationToInt(loc));
-    //     //TODO update addAction once we have new action types!
-    // }
+    private boolean isHeadquarter(MapLocation loc){
+        return this.gameWorld.isHeadquarters(loc);
+    }
 
-    // @Override
-    // public boolean canTransferEx(MapLocation loc, int amount){
-    //     try {
-    //         assertCanTransferResource(loc, ResourceType.ELIXIR, amount);
-    //         return true;
-    //     } catch(GameActionException e) {return false;}
-    // }
+    private void assertCanTransferResource(MapLocation loc, ResourceType type, int amount) throws GameActionException {
+        assertNotNull(loc);
+        assertCanActLocation(loc);
+        assertIsActionReady();
 
-    // @Override
-    // public void transferEx(MapLocation loc, int amount) throws GameActionException {
-    //     assertCanTransferResource(loc, ResourceType.ELIXIR, amount);
-    //     this.robot.addActionCooldownTurns(getType().actionCooldown);
-    //     Inventory robotInv = this.robot.getInventory();
-    //     if(isWell(loc)){
-    //         Inventory wellInv = this.gameWorld.getWell(loc).getInventory();
-    //         wellInv.addElixir(amount);
-    //         robotInv.addElixir(-amount);
-    //     }
-    //     else if(isHeadquarter(loc)){
-    //         Inventory headquarterInv = this.gameWorld.getHeadquarter(loc).getInventory();
-    //         headquarterInv.addElixir(amount);
-    //     }
-    //     this.gameWorld.getMatchMaker().addAction(getID(), Action.MINE_LEAD, locationToInt(loc));
-    //     //TODO update addAction once we have new action types!
-    // }
+        if (getType() != RobotType.CARRIER) {
+            throw new GameActionException(CANT_DO_THAT, "This robot is not a carrier");
+        }
+        if (amount > 0 && getResourceAmount(type) < amount) { // Carrier is transfering to another location
+            throw new GameActionException(CANT_DO_THAT, "Carrier does not have enough of that resource");
+        }
+        if (amount < 0 && this.robot.canAdd(-1*amount)) { // Carrier is picking up the resource from another location (headquarters)
+            if (!isHeadquarter(loc)) {
+                throw new GameActionException(CANT_DO_THAT, "Carrier can only pick up resources from headquarters");
+            }
+            throw new GameActionException(CANT_DO_THAT, "Carrier does not have enough capacity to collect the resource");
+        }
+        if (!isWell(loc) && !isHeadquarter(loc)) {
+            throw new GameActionException(CANT_DO_THAT, "Cannot transfer to a location that is not a well or a headquarter");
+        }
+    }
 
-    // private void assertCanCollectResource(MapLocation loc, int amount) throws GameActionException {
-    //     assertNotNull(loc);
-    //     assertCanActLocation(loc);
-    //     assertIsActionReady();
-    //     if (getType() != RobotType.CARRIER)
-    //         throw new GameActionException(CANT_DO_THAT,
-    //                 "Robot is of type " + getType() + " which cannot collect.");
-    //     if (!isWell(loc))
-    //         throw new GameActionException(CANT_DO_THAT, 
-    //                 "Location is not a well");
-    //     int rate = this.gameWorld.getWell(loc).isUpgraded() ? 2:4;
-    //     if (amount > rate)
-    //         throw new GameActionException(CANT_DO_THAT, 
-    //                 "Amount is higher than rate");
-    //     if (!this.robot.getInventory().canAdd(amount))
-    //         throw new GameActionException(CANT_DO_THAT, 
-    //                 "Exceeded robot's carrying capacity");
+    @Override
+    public boolean canTransferResource(MapLocation loc, ResourceType rType, int amount){
+        try {
+            assertCanTransferResource(loc, rType, amount);
+            return true;
+        } catch (GameActionException e) { return false; }  
+    }
 
-    // }   
+    @Override
+    public void transferResource(MapLocation loc, ResourceType rType, int amount) throws GameActionException {
+        assertCanTransferResource(loc, rType, amount);
+        this.robot.addActionCooldownTurns(getType().actionCooldown);
+        if (isWell(loc)) {
+            this.gameWorld.getWell(loc).addResourceAmount(rType, amount);
+            this.gameWorld.getTeamInfo().addResource(rType, this.getTeam(), -1*amount);
+        } else if(isHeadquarter(loc)){
+            InternalRobot headquarter = this.gameWorld.getRobot(loc);
+            if (headquarter.getType() != RobotType.HEADQUARTERS) {
+                throw new IllegalArgumentException("Headquarter must be the robot at this location");
+            }
+            headquarter.addResourceAmount(rType, amount);
+        }
+        this.robot.addResourceAmount(rType, -amount);
+        this.gameWorld.getMatchMaker().addAction(getID(), Action.PLACE_RESOURCE, locationToInt(loc));
+    }
 
-    // @Override
-    // public boolean canCollectResource(MapLocation loc, int amount){
-    //     try {
-    //         assertCanCollectResource(loc, amount);
-    //         return true;
-    //     } catch (GameActionException e) { return false; }  
-    // }
+    private void assertCanCollectResource(MapLocation loc, int amount) throws GameActionException {
+        assertNotNull(loc);
+        assertCanActLocation(loc);
+        assertIsActionReady();
+        if (getType() != RobotType.CARRIER)
+            throw new GameActionException(CANT_DO_THAT,
+                    "Robot is of type " + getType() + " which cannot collect.");
+        if (!isWell(loc))
+            throw new GameActionException(CANT_DO_THAT, 
+                    "Location is not a well");
+        int rate = this.gameWorld.getWell(loc).getRate();
+        amount = amount == -1 ? rate : amount;
+        if (amount > rate)
+            throw new GameActionException(CANT_DO_THAT, 
+                    "Amount is higher than rate");
+        if (!this.robot.canAdd(amount))
+            throw new GameActionException(CANT_DO_THAT, 
+                    "Exceeded robot's carrying capacity");
+    }     
 
-    // @Override
-    // public void collectResource(MapLocation loc, int amount) throws GameActionException {
-    //     assertCanCollectResource(loc, amount);
-    //     this.robot.addActionCooldownTurns(getType().actionCooldown);
+    @Override
+    public boolean canCollectResource(MapLocation loc, int amount){
+        try {
+            assertCanCollectResource(loc, amount);
+            return true;
+        } catch (GameActionException e) { return false; }  
+    }
+
+    @Override
+    public void collectResource(MapLocation loc, int amount) throws GameActionException {
+        assertCanCollectResource(loc, amount);
+        this.robot.addActionCooldownTurns(getType().actionCooldown);
     
-    //     // For methods below, Inventory class would have to first be implemented
-    //     // --> Inventory would have methods such as canAdd() and add[ResourceName](amount)
-    //     // Also assuming that ResourceType is a class tht returns an enum
-    //     // --> Would check to see what resources a well holds
+        // For methods below, Inventory class would have to first be implemented
+        // --> Inventory would have methods such as canAdd() and add[ResourceName](amount)
+        // Also assuming that ResourceType is a class tht returns an enum
+        // --> Would check to see what resources a well holds
 
-    //     Inventory robotInv = this.robot.getInventory();
+        ResourceType rType = gameWorld.getWell(loc).getResourceType();
+        if (rType == ResourceType.NO_RESOURCE) {
+            throw new IllegalArgumentException("Should not be a well with no resource");
+        }
+        int rate = this.gameWorld.getWell(loc).isUpgraded() ? 4:2;
+        amount = amount == -1 ? rate : amount;
+        this.robot.addResourceAmount(rType, amount);
+        this.gameWorld.getMatchMaker().addAction(getID(), Action.PICK_UP_RESOURCE, locationToInt(loc));
+        this.gameWorld.getTeamInfo().addResource(rType, this.getTeam(), amount);
+    }
 
-    //     if (gameWorld.getWell().getType(loc) == ResourceType.ELIXIR)
-    //         robotInv.addElixir(amount);
-    //     else if (gameWorld.getWell().getType(loc) == ResourceType.MANA)
-    //         robotInv.addMana(amount);
-    //     else
-    //         robotInv.addAdamantium(amount);
-    
-    //     // Will need to update this last line
-    //     this.gameWorld.getMatchMaker().addAction(getID(), Action.MINE_GOLD, locationToInt(loc));
-    // }
+    private void assertCanPlaceAnchor() throws GameActionException {
+        assertIsActionReady();
+        if (getType() != RobotType.CARRIER)
+        throw new GameActionException(CANT_DO_THAT,
+                "Robot is of type " + getType() + " which cannot have anchors.");
+        MapLocation location = this.getLocation();
+        Island island = this.gameWorld.getIsland(location);
+        if (island == null)
+            throw new GameActionException(CANT_DO_THAT,
+                    "Robot is not on an island.");
+        if (!this.robot.holdingAnchor())
+            throw new GameActionException(CANT_DO_THAT,"Robot is not holding anchor.");
+        Anchor heldAnchor = this.robot.getTypeAnchor();
+        if (!island.canPlaceAnchor(getTeam(), heldAnchor)) {
+            throw new GameActionException(CANT_DO_THAT,"Can't place anchor on occupied island.");
+        }
+    }     
+
+    @Override
+    public boolean canPlaceAnchor() {
+        try {
+            assertCanPlaceAnchor();
+            return true;
+        } catch (GameActionException e) { return false; }  
+    }
+
+    @Override
+    public void placeAnchor() throws GameActionException {
+        assertCanPlaceAnchor();
+        MapLocation location = this.getLocation();
+        Island island = this.gameWorld.getIsland(location);
+        Anchor heldAnchor = this.robot.getTypeAnchor();
+        island.placeAnchor(getTeam(), heldAnchor);
+        this.robot.releaseAnchor(heldAnchor);
+        this.robot.addActionCooldownTurns(getType().actionCooldown);
+        this.gameWorld.getMatchMaker().addAction(getID(), Action.PLACE_ANCHOR, island.getID());
+    }
+
+    private void assertCanTakeAnchor(MapLocation loc, Anchor anchor) throws GameActionException {
+        assertNotNull(loc);
+        assertNotNull(anchor);
+        assertCanActLocation(loc);
+        assertIsActionReady();
+        if (getType() != RobotType.CARRIER)
+            throw new GameActionException(CANT_DO_THAT,
+                    "Robot is of type " + getType() + " which cannot collect anchors.");
+        if (!isHeadquarter(loc))
+            throw new GameActionException(CANT_DO_THAT, 
+                    "Can only take anchors from headquarters.");
+        InternalRobot hq = this.gameWorld.getRobot(loc);
+        if (hq.getNumAnchors(anchor) < 1) {
+            throw new GameActionException(CANT_DO_THAT, 
+            "Not enough anchors");
+        }
+        if (!this.robot.canAddAnchor()) {
+            throw new GameActionException(CANT_DO_THAT, 
+            "Not enough capacity to pick up an anchor.");
+        }
+    } 
+
+    @Override
+    public boolean canTakeAnchor(MapLocation loc, Anchor anchor) {
+        try {
+            assertCanTakeAnchor(loc, anchor);
+            return true;
+        } catch (GameActionException e) { return false; }  
+    }
+
+    @Override
+    public void takeAnchor(MapLocation loc, Anchor anchor) throws GameActionException {
+        assertCanTakeAnchor(loc, anchor);
+        InternalRobot headquarters = this.gameWorld.getRobot(loc);
+        headquarters.releaseAnchor(anchor);
+        this.robot.addAnchor(anchor);
+        this.robot.addActionCooldownTurns(getType().actionCooldown);
+        this.gameWorld.getMatchMaker().addAction(getID(), Action.PICK_UP_ANCHOR, headquarters.getID()*2 + anchor.getAccelerationIndex());
+    }
 
     // ***********************************
     // ****** COMMUNICATION METHODS ****** 
@@ -753,19 +902,29 @@ public final strictfp class RobotControllerImpl implements RobotController {
         return this.gameWorld.getTeamInfo().readSharedArray(getTeam(), index);
     }
 
+    private void assertCanWriteSharedArray(int index, int value) throws GameActionException{
+        assertValidIndex(index);
+        assertValidValue(value);
+        if (!this.gameWorld.inRangeForAmplification(this.robot)) {
+            throw new GameActionException(CANT_DO_THAT, "You cannot write to the shared array");
+        }
+    }
 
-    //TODO: not yet implemented
     @Override
-    public boolean canWriteSharedArray() {
-        return true;
+    public boolean canWriteSharedArray(int index, int value){
+        try {
+            assertCanWriteSharedArray(index, value);
+            return true;
+        } catch (GameActionException e) { return false; }  
     }
 
     @Override
     public void writeSharedArray(int index, int value) throws GameActionException {
-        assertValidIndex(index);
-        assertValidValue(value);
+        assertCanWriteSharedArray(index, value);
         this.gameWorld.getTeamInfo().writeSharedArray(getTeam(), index, value);
     }
+
+
 
     // ***********************************
     // ****** OTHER ACTION METHODS *******

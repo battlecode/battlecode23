@@ -60,7 +60,6 @@ public strictfp class RobotPlayer {
             // loop, we call Clock.yield(), signifying that we've done everything we want to do.
 
             turnCount += 1;  // We have now been alive for one more turn!
-            System.out.println("Age: " + turnCount + "; Location: " + rc.getLocation());
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode.
             try {
@@ -124,7 +123,7 @@ public strictfp class RobotPlayer {
     }
 
     /**
-     * Run a single turn for a Miner.
+     * Run a single turn for a Carrier.
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
      */
     static void runCarrier(RobotController rc) throws GameActionException {
@@ -132,28 +131,91 @@ public strictfp class RobotPlayer {
         MapLocation me = rc.getLocation();
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
-                // MapLocation mineLocation = new MapLocation(me.x + dx, me.y + dy);
-                // // Notice that the Miner's action cooldown is very low.
-                // // You can mine multiple times per turn!
-                // while (rc.can(mineLocation)) {
-                //     rc.mineGold(mineLocation);
-                // }
-                // while (rc.canMineLead(mineLocation)) {
-                //     rc.mineLead(mineLocation);
-                // }
+                int radius = rc.getType().actionRadiusSquared;
+                Team opponent = rc.getTeam().opponent();
+                RobotInfo[] enemies = rc.senseNearbyRobots(radius, opponent);
+                if (enemies.length >= 0) {
+                    // MapLocation toAttack = enemies[0].location;
+                    MapLocation toAttack = rc.getLocation().add(Direction.EAST);
+        
+                    if (rc.canAttack(toAttack)) {
+                        rc.setIndicatorString("Attacking");        
+                        rc.attack(toAttack);
+                    }
+                }
+                MapLocation mineLocation = new MapLocation(me.x + dx, me.y + dy);
+                // Notice that the Miner's action cooldown is very low.
+                // You can mine multiple times per turn!
+                if (rc.canCollectResource(mineLocation, -1)) {
+                    if (rng.nextBoolean()) {
+                        rc.collectResource(mineLocation, -1);
+                        System.out.println("Collecting resource from " + mineLocation);
+                        rc.setIndicatorString("Collecting, now have, AD:" + 
+                            rc.getResourceAmount(ResourceType.ADAMANTIUM) + 
+                            " MN: " + rc.getResourceAmount(ResourceType.MANA) + 
+                            " EX: " + rc.getResourceAmount(ResourceType.ELIXIR));
+                    }
+                    if (rng.nextBoolean()) {
+
+                        System.out.println("Trying to transfer");
+                        ResourceType rType = rc.senseNearbyWells(mineLocation, 0)[0].getResourceType();
+                        if (rc.canTransferResource(mineLocation, rType, 1)) {
+                            rc.transferResource(mineLocation, rType, 1);
+                        }
+                        // rc.transferResource(mineLocation, , 1);
+                        // for (ResourceType rType : ResourceType.values()) {
+                        //     if (rc.canTransferResource(mineLocation, rType, 1)) {
+                        //         rc.transferResource(mineLocation, rType, 1);
+                        //         rc.setIndicatorString("Transferring, now have, AD:" + 
+                        //             rc.getResourceAmount(ResourceType.ADAMANTIUM) + 
+                        //             " MN: " + rc.getResourceAmount(ResourceType.MANA) + 
+                        //             " EX: " + rc.getResourceAmount(ResourceType.ELIXIR));
+                        //         System.out.println("Transferring, now have, AD:" + 
+                        //             rc.getResourceAmount(ResourceType.ADAMANTIUM) + 
+                        //             " MN: " + rc.getResourceAmount(ResourceType.MANA) + 
+                        //             " EX: " + rc.getResourceAmount(ResourceType.ELIXIR));
+                        //     }
+                        // }
+                    }
+                }
             }
         }
-
+        RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
+        for (RobotInfo robot : robots) {
+            if (robot.getType() == RobotType.HEADQUARTERS) {
+                Direction dir = me.directionTo(robot.getLocation());
+                if (rc.canMove(dir) && rng.nextBoolean())
+                    rc.move(dir);
+                if (rc.canTransferResource(robot.getLocation(), ResourceType.ADAMANTIUM, 1)) {
+                    rc.transferResource(robot.getLocation(), ResourceType.ADAMANTIUM, 1);
+                    rc.setIndicatorString("Transfering, now have, AD:" + 
+                        rc.getResourceAmount(ResourceType.ADAMANTIUM) + 
+                        " MN: " + rc.getResourceAmount(ResourceType.MANA) + 
+                        " EX: " + rc.getResourceAmount(ResourceType.ELIXIR));
+                    System.out.println("Transfering, now have, AD:" + 
+                        rc.getResourceAmount(ResourceType.ADAMANTIUM) + 
+                        " MN: " + rc.getResourceAmount(ResourceType.MANA) + 
+                        " EX: " + rc.getResourceAmount(ResourceType.ELIXIR));
+                }
+            }
+        }
+        
+        Well[] wells = rc.senseNearbyWells();
+        if (wells.length > 0 && rng.nextBoolean()) {
+            Well well_one = wells[0];
+            Direction dir = me.directionTo(well_one.getMapLocation());
+            if (rc.canMove(dir)) 
+                rc.move(dir);
+        }
         // Also try to move randomly.
         Direction dir = directions[rng.nextInt(directions.length)];
         if (rc.canMove(dir)) {
             rc.move(dir);
-            System.out.println("I moved!");
         }
     }
 
     /**
-     * Run a single turn for a Soldier.
+     * Run a single turn for a Launcher.
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
      */
     static void runLauncher(RobotController rc) throws GameActionException {
@@ -161,9 +223,12 @@ public strictfp class RobotPlayer {
         int radius = rc.getType().actionRadiusSquared;
         Team opponent = rc.getTeam().opponent();
         RobotInfo[] enemies = rc.senseNearbyRobots(radius, opponent);
-        if (enemies.length > 0) {
-            MapLocation toAttack = enemies[0].location;
+        if (enemies.length >= 0) {
+            // MapLocation toAttack = enemies[0].location;
+            MapLocation toAttack = rc.getLocation().add(Direction.EAST);
+
             if (rc.canAttack(toAttack)) {
+                rc.setIndicatorString("Attacking");        
                 rc.attack(toAttack);
             }
         }
@@ -172,7 +237,6 @@ public strictfp class RobotPlayer {
         Direction dir = directions[rng.nextInt(directions.length)];
         if (rc.canMove(dir)) {
             rc.move(dir);
-            System.out.println("I moved!");
         }
     }
 }

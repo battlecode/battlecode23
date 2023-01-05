@@ -2,8 +2,10 @@ package battlecode.server;
 
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
+import battlecode.common.ResourceType;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
+import battlecode.common.Well;
 import battlecode.instrumenter.profiler.Profiler;
 import battlecode.instrumenter.profiler.ProfilerCollection;
 import battlecode.instrumenter.profiler.ProfilerEventType;
@@ -250,6 +252,8 @@ public strictfp class GameMaker {
             TeamData.addName(builder, name);
             TeamData.addPackageName(builder, packageName);
             TeamData.addTeamID(builder, TeamMapping.id(Team.A));
+            System.out.println("Team A: " + TeamMapping.id(Team.A));
+
             int teamAOffset = TeamData.endTeamData(builder);
 
             name = builder.createString(gameInfo.getTeamBName());
@@ -257,6 +261,7 @@ public strictfp class GameMaker {
             TeamData.startTeamData(builder);
             TeamData.addName(builder, name);
             TeamData.addPackageName(builder, packageName);
+            System.out.println("Team B: " + TeamMapping.id(Team.B));
             TeamData.addTeamID(builder, TeamMapping.id(Team.B));
             int teamBOffset = TeamData.endTeamData(builder);
             int[] teamsVec = {teamAOffset, teamBOffset};
@@ -265,7 +270,7 @@ public strictfp class GameMaker {
             int bodyTypeMetadataOffset = makeBodyTypeMetadata(builder);
 
             Constants.startConstants(builder);
-            Constants.addIncreasePeriod(builder, GameConstants.ADD_LEAD_EVERY_ROUNDS);
+            Constants.addIncreasePeriod(builder, GameConstants.PASSIVE_INCREASE_ROUNDS);
             Constants.addMnAdditiveIncrease(builder, GameConstants.PASSIVE_AD_INCREASE);
             Constants.addAdAdditiveIncrease(builder, GameConstants.PASSIVE_MN_INCREASE);
             int constantsOffset = Constants.endConstants(builder);
@@ -358,12 +363,12 @@ public strictfp class GameMaker {
         private TIntArrayList islandTurnoverTurns;
         private TIntArrayList islandOwnership;
 
-        private TIntArrayList resourceWellLocsX;
-        private TIntArrayList resourceWellLocsY;
-        private TIntArrayList resourceWellAdChange;
-        private TIntArrayList resourceWellMnChange;
-        private TIntArrayList resourceWellExChange;
-        private TIntArrayList resourceWellId;
+        private TIntArrayList resourceWellLocs;
+        private TIntArrayList resourceWellAdValue;
+        private TIntArrayList resourceWellMnValue;
+        private TIntArrayList resourceWellExValue;
+        private TIntArrayList resourceWellID;
+        private TIntArrayList wellAccelerationID;
 
         private TIntArrayList indicatorStringIDs;
         private ArrayList<String> indicatorStrings;
@@ -413,12 +418,12 @@ public strictfp class GameMaker {
             this.islandIDs = new TIntArrayList();
             this.islandTurnoverTurns = new TIntArrayList();
             this.islandOwnership = new TIntArrayList();
-            this.resourceWellLocsX = new TIntArrayList();
-            this.resourceWellLocsY = new TIntArrayList();
-            this.resourceWellAdChange = new TIntArrayList();
-            this.resourceWellMnChange = new TIntArrayList();
-            this.resourceWellExChange = new TIntArrayList();
-            this.resourceWellId = new TIntArrayList();
+            this.resourceWellLocs = new TIntArrayList();
+            this.resourceWellAdValue = new TIntArrayList();
+            this.resourceWellMnValue = new TIntArrayList();
+            this.resourceWellExValue = new TIntArrayList();
+            this.resourceWellID = new TIntArrayList();
+            this.wellAccelerationID = new TIntArrayList();
             this.indicatorStringIDs = new TIntArrayList();
             this.indicatorStrings = new ArrayList<>();
             this.indicatorDotIDs = new TIntArrayList();
@@ -553,12 +558,12 @@ public strictfp class GameMaker {
                 int islandOwnershipP = Round.createIslandOwnershipVector(builder, islandOwnership.toArray());     
 
                 // The information about wells
-                int resourceWellLocsP = createVecTable(builder, resourceWellLocsX, resourceWellLocsY);
-                int resourceWellAdChangeP = Round.createWellAdamantiumChangeVector(builder, resourceWellAdChange.toArray());
-                int resourceWellMnChangeP = Round.createWellManaChangeVector(builder, resourceWellMnChange.toArray());
-                int resourceWellExChangeP = Round.createWellElixirChangeVector(builder, resourceWellExChange.toArray());
-                int resourceWellIDP = Round.createResourceIDVector(builder, resourceWellId.toArray());
-
+                int resourceWellLocsP = Round.createResourceWellLocsVector(builder, resourceWellLocs.toArray());
+                int resourceWellAdValueP = Round.createWellAdamantiumValuesVector(builder, resourceWellAdValue.toArray());
+                int resourceWellMnValueP = Round.createWellManaValuesVector(builder, resourceWellMnValue.toArray());
+                int resourceWellExValueP = Round.createWellElixirValuesVector(builder, resourceWellExValue.toArray());
+                int resourceWellIDsP = Round.createResourceIDVector(builder, resourceWellID.toArray());
+                int wellAccelerationIDsP = Round.createWellAccelerationIDVector(builder, wellAccelerationID.toArray());
 
                 // The indicator strings that were set
                 int indicatorStringIDsP = Round.createIndicatorStringIDsVector(builder, indicatorStringIDs.toArray());
@@ -599,10 +604,11 @@ public strictfp class GameMaker {
                 Round.addIslandTurnoverTurns(builder, islandTurnoverTurnsP);
                 Round.addIslandOwnership(builder, islandOwnershipP);
                 Round.addResourceWellLocs(builder, resourceWellLocsP);
-                Round.addWellAdamantiumChange(builder, resourceWellAdChangeP);
-                Round.addWellManaChange(builder, resourceWellMnChangeP);
-                Round.addWellElixirChange(builder, resourceWellExChangeP);
-                Round.addResourceID(builder, resourceWellIDP);
+                Round.addWellAdamantiumValues(builder, resourceWellAdValueP);
+                Round.addWellManaValues(builder, resourceWellMnValueP);
+                Round.addWellElixirValues(builder, resourceWellExValueP);
+                Round.addResourceID(builder, resourceWellIDsP);
+                Round.addWellAccelerationID(builder, wellAccelerationIDsP);
                 Round.addIndicatorStringIDs(builder, indicatorStringIDsP);
                 Round.addIndicatorStrings(builder, indicatorStringsP);
                 Round.addIndicatorDotIDs(builder, indicatorDotIDsP);
@@ -645,13 +651,13 @@ public strictfp class GameMaker {
             actionTargets.add(targetID);
         }
 
-        public void addToWell(MapLocation location, int adChange, int mnChange, int exChange, int resourceID) {
-            resourceWellLocsX.add(location.x);
-            resourceWellLocsY.add(location.y);
-            resourceWellAdChange.add(adChange);
-            resourceWellMnChange.add(mnChange);
-            resourceWellExChange.add(exChange);
-            resourceWellId.add(resourceID);
+        public void addWell(Well well, int location) {
+            resourceWellLocs.add(location);
+            resourceWellAdValue.add(well.getResource(ResourceType.ADAMANTIUM));
+            resourceWellMnValue.add(well.getResource(ResourceType.MANA));
+            resourceWellExValue.add(well.getResource(ResourceType.ELIXIR));
+            resourceWellID.add(well.getResourceType().resourceID);
+            wellAccelerationID.add(well.accelerationId());
         }
 
         public void addIslandInfo(int islandID, int turnoverTurns, int ownership) {
@@ -734,12 +740,12 @@ public strictfp class GameMaker {
             islandIDs.clear();
             islandTurnoverTurns.clear();
             islandOwnership.clear();
-            resourceWellLocsX.clear();
-            resourceWellLocsY.clear();
-            resourceWellAdChange.clear();
-            resourceWellMnChange.clear();
-            resourceWellExChange.clear();
-            resourceWellId.clear();
+            resourceWellLocs.clear();
+            resourceWellAdValue.clear();
+            resourceWellMnValue.clear();
+            resourceWellExValue.clear();
+            resourceWellID.clear();
+            wellAccelerationID.clear();
             indicatorStringIDs.clear();
             indicatorStrings.clear();
             indicatorDotIDs.clear();
