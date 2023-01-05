@@ -13,7 +13,7 @@ export default class AnomalyForm {
   readonly anomaly: HTMLSelectElement;
   readonly round: HTMLInputElement;
 
-  private readonly ANOMALIES = cst.anomalyList;
+  private readonly ANOMALIES = [];
   
   constructor() {
 
