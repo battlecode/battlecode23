@@ -130,8 +130,8 @@ public final strictfp class RobotControllerImpl implements RobotController {
     }
 
     @Override
-    public boolean checkHasAnchor() {
-        return this.robot.holdingAnchor();  
+    public Anchor getAnchor() {
+        return this.robot.getTypeAnchor();  
     }
 
     private InternalRobot getRobotByID(int id) {
@@ -290,42 +290,51 @@ public final strictfp class RobotControllerImpl implements RobotController {
     }
 
     @Override
-    public Map<Integer, MapLocation[]> senseNearbyIslandLocations() {
-        try {
-            return senseNearbyIslandLocations(-1);
-        } catch (GameActionException e) {
-            return new HashMap<Integer, MapLocation[]>();
+    public int[] senseNearbyIslands() {
+        Island[] allSensedIslands = gameWorld.getAllIslandsWithinRadiusSquared(getLocation(), getType().visionRadiusSquared);
+        Set<Integer> islandIdsSet = new HashSet<>();
+        for(int i = 0; i < allSensedIslands.length; i++) {
+            islandIdsSet.add(allSensedIslands[i].ID);
         }
-    }
-    
-    @Override
-    public Map<Integer, MapLocation[]> senseNearbyIslandLocations(int radiusSquared) throws GameActionException {
-        assertRadiusNonNegative(radiusSquared);
-        return senseNearbyIslandLocations(getLocation(), radiusSquared);
+        int[] islandIds = new int[islandIdsSet.size()];
+        int i = 0;
+        for (Integer id : islandIdsSet) {
+            islandIds[i] = id;
+            i++;
+        }
+        return islandIds;
     }
 
     @Override
-    public Map<Integer, MapLocation[]> senseNearbyIslandLocations(MapLocation center, int radiusSquared) throws GameActionException {
+    public MapLocation[] senseNearbyIslandLocations(int idx) throws GameActionException {
+        return senseNearbyIslandLocations(-1, idx);
+    }
+    
+    @Override
+    public MapLocation[] senseNearbyIslandLocations(int radiusSquared, int idx) throws GameActionException {
+        assertRadiusNonNegative(radiusSquared);
+        return senseNearbyIslandLocations(getLocation(), radiusSquared, idx);
+    }
+
+    @Override
+    public MapLocation[] senseNearbyIslandLocations(MapLocation center, int radiusSquared, int idx) throws GameActionException {
         assertNotNull(center);
         assertRadiusNonNegative(radiusSquared);
 
         int actualRadiusSquared = radiusSquared == -1 ? getType().visionRadiusSquared : Math.min(radiusSquared, getType().visionRadiusSquared);
 
-        Island[] allSensedIslands = gameWorld.getAllIslandsWithinRadiusSquared(center, actualRadiusSquared);
-
-        Map<Integer, MapLocation[]> islandLocations = new HashMap<Integer, MapLocation[]>();
-        for (Island island : allSensedIslands) {
-            List<MapLocation> validLocations = Arrays.asList(island.locations);
-            validLocations.removeIf(loc -> !canSenseLocation(loc));
-
-            if (validLocations.isEmpty()) {
-                continue;
-            }
-
-            islandLocations.put(island.ID, validLocations.toArray(new MapLocation[validLocations.size()]));
+        Island island = gameWorld.getIsland(idx);
+        if (island == null) {
+            throw new GameActionException(CANT_SENSE_THAT, "Not a valid island id");
         }
 
-        return islandLocations;
+        ArrayList<MapLocation> islandLocs = new ArrayList<>();
+        for(MapLocation loc : island.locations) {
+            if (canSenseLocation(loc) && center.distanceSquaredTo(loc) <= actualRadiusSquared) {
+                islandLocs.add(loc);
+            }
+        }
+        return islandLocs.toArray(new MapLocation[islandLocs.size()]);
     }
 
     private boolean canSenseIsland(Island island) {
@@ -349,7 +358,7 @@ public final strictfp class RobotControllerImpl implements RobotController {
             throw new GameActionException(CANT_SENSE_THAT, "Cannot sense an island with that id");
         }
 
-        return island.turnsLeftToRemoveAnchor;
+        return island.anchorHealth;
     }
 
     @Override
@@ -397,15 +406,20 @@ public final strictfp class RobotControllerImpl implements RobotController {
         assertNotNull(center);
         assertRadiusNonNegative(radiusSquared);
         int actualRadiusSquared = radiusSquared == -1 ? getType().visionRadiusSquared : Math.min(radiusSquared, getType().visionRadiusSquared);
-
-        // TODO update based on well implementation
         Well[] allSensedWells = gameWorld.getAllWellsWithinRadiusSquared(center, actualRadiusSquared);
-        List<Well> validSensedWells = Arrays.asList(allSensedWells);
-        validSensedWells.removeIf(well -> !canSenseLocation(well.getMapLocation()) ||
-            (resourceType != null && well.getResourceType() != resourceType));
-        List<Well> validSensedWellsCopy = new ArrayList<Well>();
-        validSensedWells.forEach( (well) -> validSensedWellsCopy.add(well.copy()) );
-        return validSensedWellsCopy.toArray(new Well[validSensedWellsCopy.size()]);
+        List<Well> validSensedWells = new ArrayList<>();
+        for (Well well : allSensedWells) {
+            // Can't actually sense location
+            if (!canSenseLocation(well.getMapLocation())) {
+                continue;
+            }
+            // Resource types don't match
+            if (resourceType != null && well.getResourceType() != resourceType) {
+                continue;
+            }
+            validSensedWells.add(well.copy());
+        }
+        return validSensedWells.toArray(new Well[validSensedWells.size()]);
     }
 
     @Override
@@ -498,8 +512,7 @@ public final strictfp class RobotControllerImpl implements RobotController {
         assertCanMove(dir);
         MapLocation nextLoc = adjacentLocation(dir);
         this.robot.setLocation(nextLoc);
-        // this has to happen after robot's location changed because rubble
-        this.robot.addMovementCooldownTurns(getType().movementCooldown);
+        this.robot.addMovementCooldownTurns();
     }
 
     // ***********************************
@@ -590,6 +603,7 @@ public final strictfp class RobotControllerImpl implements RobotController {
             this.robot.addResourceAmount(rType, -1*anchor.getBuildCost(rType));
             this.gameWorld.getTeamInfo().addResource(rType, team, -1*anchor.getBuildCost(rType));
         }
+        this.robot.addAnchor(anchor);
         this.gameWorld.getMatchMaker().addAction(getID(), Action.BUILD_ANCHOR, anchor.getAccelerationIndex());
     }
 
@@ -796,7 +810,7 @@ public final strictfp class RobotControllerImpl implements RobotController {
         if (rType == ResourceType.NO_RESOURCE) {
             throw new IllegalArgumentException("Should not be a well with no resource");
         }
-        int rate = this.gameWorld.getWell(loc).isUpgraded() ? 4:2;
+        int rate = this.gameWorld.getWell(loc).getRate();
         amount = amount == -1 ? rate : amount;
         this.robot.addResourceAmount(rType, amount);
         this.gameWorld.getMatchMaker().addAction(getID(), Action.PICK_UP_RESOURCE, locationToInt(loc));
@@ -834,6 +848,7 @@ public final strictfp class RobotControllerImpl implements RobotController {
         assertCanPlaceAnchor();
         MapLocation location = this.getLocation();
         Island island = this.gameWorld.getIsland(location);
+        assert(island != null);
         Anchor heldAnchor = this.robot.getTypeAnchor();
         island.placeAnchor(getTeam(), heldAnchor);
         this.robot.releaseAnchor(heldAnchor);
@@ -846,12 +861,14 @@ public final strictfp class RobotControllerImpl implements RobotController {
         assertNotNull(anchor);
         assertCanActLocation(loc);
         assertIsActionReady();
-        if (getType() != RobotType.CARRIER)
+        if (getType() != RobotType.CARRIER){
             throw new GameActionException(CANT_DO_THAT,
                     "Robot is of type " + getType() + " which cannot collect anchors.");
-        if (!isHeadquarter(loc))
+        }
+        if (!isHeadquarter(loc)){
             throw new GameActionException(CANT_DO_THAT, 
                     "Can only take anchors from headquarters.");
+        }
         InternalRobot hq = this.gameWorld.getRobot(loc);
         if (hq.getNumAnchors(anchor) < 1) {
             throw new GameActionException(CANT_DO_THAT, 

@@ -137,7 +137,7 @@ public strictfp class InternalRobot implements Comparable<InternalRobot> {
                 break;
             case NO_RESOURCE:
                 if (amount != 0) 
-                    throw new IllegalArgumentException("No resource should have value of 0");
+                    throw new IllegalArgumentException("No resource should have value of 0 but has value of " + amount);
                 break;
         }
     }
@@ -269,7 +269,11 @@ public strictfp class InternalRobot implements Comparable<InternalRobot> {
      * @param toSense the MapLocation to sense
      */
     public boolean canSenseLocation(MapLocation toSense) {
-        return this.location.distanceSquaredTo(toSense) <= getVisionRadiusSquared();
+        int visionRadiusSquared = getVisionRadiusSquared();
+        if (this.gameWorld.getCloud(toSense) || this.gameWorld.getCloud(this.getLocation())) {
+            visionRadiusSquared = GameConstants.CLOUD_VISION_RADIUS_SQUARED;
+        }
+        return this.location.distanceSquaredTo(toSense) <= visionRadiusSquared;
     }
 
     /**
@@ -325,12 +329,20 @@ public strictfp class InternalRobot implements Comparable<InternalRobot> {
         setActionCooldownTurns(this.actionCooldownTurns + newActionCooldownTurns);
     }
 
+    private int getBaseMovementCooldown() {
+        if (this.getType() == RobotType.CARRIER) {
+            int cooldownAmount = (4*this.inventory.getWeight()/5) + 10;
+            return cooldownAmount;
+        } else {
+            return this.getType().movementCooldown;
+        }
+    }
+    
     /**
      * Resets the movement cooldown.
      */
-    public void addMovementCooldownTurns(int numMovementCooldownToAdd) {
-        //TODO: needs to be changed
-        int newMovementCooldownTurns = this.gameWorld.getCooldownWithMultiplier(numMovementCooldownToAdd, this.location, this.team);
+    public void addMovementCooldownTurns() {
+        int newMovementCooldownTurns = this.gameWorld.getCooldownWithMultiplier(getBaseMovementCooldown(), this.location, this.team);
         setMovementCooldownTurns(this.movementCooldownTurns + newMovementCooldownTurns);
     }
 

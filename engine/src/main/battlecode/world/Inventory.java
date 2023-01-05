@@ -1,8 +1,5 @@
 package battlecode.world;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import battlecode.common.*;
 
 public class Inventory {
@@ -63,6 +60,7 @@ public class Inventory {
         switch (anchor) {
             case STANDARD:
                 numStandardAnchors ++;
+                break;
             case ACCELERATING:
                 numAcceleratingAnchors ++;
                 break;
@@ -73,6 +71,7 @@ public class Inventory {
         switch (anchor) {
             case STANDARD:
                 numStandardAnchors --;
+                break;
             case ACCELERATING:
                 numAcceleratingAnchors --;
                 break;
@@ -120,9 +119,21 @@ public class Inventory {
      * Convenience method that returns the amount of the given resource type.
      */
     public int getResource(ResourceType type) {
-        if(type == ResourceType.ADAMANTIUM) return adamantium;
-        else if(type == ResourceType.ELIXIR) return elixir;
-        return mana;
+        switch (type) {
+            case ADAMANTIUM: 
+                return adamantium;
+            case MANA:
+                return mana;
+            case ELIXIR:
+                return elixir;
+            default:
+                return 0;
+        }
+    }
+
+    public int getWeight() {
+        int total = (getTotalAnchors() * GameConstants.ANCHOR_WEIGHT) + adamantium + mana + elixir;
+        return total;
     }
 
     /**
@@ -130,7 +141,7 @@ public class Inventory {
      */
     public boolean canAdd(int amount) {
         if(maxCapacity == -1) return true;
-        int total = (getTotalAnchors() * GameConstants.ANCHOR_WEIGHT) + adamantium + mana + elixir;
+        int total = getWeight();
         return total + amount <= maxCapacity;
     }
 

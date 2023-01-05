@@ -14,11 +14,9 @@ public class Island {
     final GameWorld gw;
     Team teamOwning;
     Anchor anchorPlanted;
-    int turnsLeftToRemoveAnchor;
+    int anchorHealth;
 
     public Island(GameWorld gw, int ID, List<MapLocation> locations) {
-        // TODO: this may not be the right place for this assertion but as we rebalance this needs to be true
-        assert(GameConstants.PERCENT_OPPOSING_TEAM_ISLAND + GameConstants.PERCENT_OWNING_TEAM_ISLAND > 1.0f);
         this.gw = gw;
         this.ID = ID;
         this.locations = new MapLocation[locations.size()];
@@ -27,11 +25,24 @@ public class Island {
         }
         this.teamOwning = Team.NEUTRAL;
         this.anchorPlanted = null;
-        this.turnsLeftToRemoveAnchor = 0;
+        this.anchorHealth = 0;
     }
 
     public Team getTeam() {
         return this.teamOwning;
+    }
+
+    public int getTeamInt() {
+        switch (getTeam()) {
+            case NEUTRAL:
+                return 0;
+            case A:
+                return 1;
+            case B:
+                return 2;
+            default:
+                return 0;
+        }
     }
 
     public int getID() {
@@ -40,6 +51,10 @@ public class Island {
 
     public Anchor getAnchor() {
         return this.anchorPlanted;
+    }
+
+    public int getHealth() {
+        return this.anchorHealth;
     }
 
     private void assertCanPlaceAnchor(Team placingTeam, Anchor toPlace) throws GameActionException {
@@ -64,7 +79,7 @@ public class Island {
             this.gw.addBoostFromAnchor(this);
         }
         this.teamOwning = placingTeam;
-        this.turnsLeftToRemoveAnchor = toPlace.turnsToRemove;
+        this.anchorHealth = toPlace.totalHealth;
         this.gw.getTeamInfo().placeAnchor(placingTeam);
     }
 
@@ -73,25 +88,23 @@ public class Island {
             return;
         }       
         int[] numOccupied = new int[2];
-        for (MapLocation loc : locations) {
-            Team robotTeam = gw.getRobot(loc).getTeam();
-            numOccupied[robotTeam.ordinal()] ++;
-        }
-        if ((float) (numOccupied[teamOwning.ordinal()]) / locations.length >= GameConstants.PERCENT_OWNING_TEAM_ISLAND) {
-            // If the team controlling the island controls enough of the island reset the count
-            this.turnsLeftToRemoveAnchor = this.anchorPlanted.turnsToRemove;
-        } else if ((float) (numOccupied[teamOwning.opponent().ordinal()]) / locations.length >= GameConstants.PERCENT_OPPOSING_TEAM_ISLAND) {
-            // If the opposing team controls enough of the island decrease the count
-            this.turnsLeftToRemoveAnchor -= 1;
-            if (this.turnsLeftToRemoveAnchor <= 0) {
-                this.gw.getTeamInfo().removeAnchor(this.teamOwning);
-                this.teamOwning = Team.NEUTRAL;
-                if (this.anchorPlanted == Anchor.ACCELERATING) {
-                    this.gw.removeBoostFromAnchor(this);
-                }
-                this.anchorPlanted = null;
-                this.turnsLeftToRemoveAnchor = 0;
+        for (MapLocation loc : this.locations) {
+            InternalRobot robot = gw.getRobot(loc);
+            if (robot != null) {
+                Team robotTeam = robot.getTeam();
+                numOccupied[robotTeam.ordinal()] ++;
             }
+        }
+        int diffPctOccupied = (100*(numOccupied[teamOwning.ordinal()] - numOccupied[teamOwning.opponent().ordinal()]))/(locations.length);
+        this.anchorHealth = Math.min(this.anchorPlanted.totalHealth, this.anchorHealth + diffPctOccupied);
+        if (this.anchorHealth <= 0) {
+            this.gw.getTeamInfo().removeAnchor(this.teamOwning);
+            this.teamOwning = Team.NEUTRAL;
+            if (this.anchorPlanted == Anchor.ACCELERATING) {
+                this.gw.removeBoostFromAnchor(this);
+            }
+            this.anchorPlanted = null;
+            this.anchorHealth = 0;
         }
     }
 
