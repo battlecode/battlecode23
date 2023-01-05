@@ -87,6 +87,10 @@ module.exports = function(env) {
           'process.env.ELECTRON': true
         })
       ],
+      // https://sharp.pixelplumbing.com/install#bundlers
+      externals: {
+        'sharp': 'commonjs sharp'
+      },
       // electron will find './out/thing.ext' but won't find '/out/thing.ext'
       output: { publicPath: './out/' }
     });
@@ -98,13 +102,10 @@ module.exports = function(env) {
           'process.env.ELECTRON': false
         })
       ],
-      // externals: {
-      //   'electron': 'electron',
-      //   'os': 'os',
-      //   'fs': 'fs',
-      //   'child_process': 'child_process',
-      //   'http': 'http'
-      // }
+      // https://sharp.pixelplumbing.com/install#bundlers
+      externals: {
+        'sharp': 'commonjs sharp'
+      },
     });
   }
 
