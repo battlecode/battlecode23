@@ -554,9 +554,9 @@ public strictfp class GameMaker {
 
                 // The information about wells
                 int resourceWellLocsP = createVecTable(builder, resourceWellLocsX, resourceWellLocsY);
-                int resourceWellAdChangeP = Round.createWellAdamantiumChangeVector(builder, resourceWellAdChange.toArray());
-                int resourceWellMnChangeP = Round.createWellManaChangeVector(builder, resourceWellMnChange.toArray());
-                int resourceWellExChangeP = Round.createWellElixirChangeVector(builder, resourceWellExChange.toArray());
+                // int resourceWellAdChangeP = Round.createWellAdamantiumChangeVector(builder, resourceWellAdChange.toArray());
+                // int resourceWellMnChangeP = Round.createWellManaChangeVector(builder, resourceWellMnChange.toArray());
+                // int resourceWellExChangeP = Round.createWellElixirChangeVector(builder, resourceWellExChange.toArray());
                 int resourceWellIDP = Round.createResourceIDVector(builder, resourceWellId.toArray());
 
 
@@ -599,9 +599,9 @@ public strictfp class GameMaker {
                 Round.addIslandTurnoverTurns(builder, islandTurnoverTurnsP);
                 Round.addIslandOwnership(builder, islandOwnershipP);
                 Round.addResourceWellLocs(builder, resourceWellLocsP);
-                Round.addWellAdamantiumChange(builder, resourceWellAdChangeP);
-                Round.addWellManaChange(builder, resourceWellMnChangeP);
-                Round.addWellElixirChange(builder, resourceWellExChangeP);
+                // Round.addWellAdamantiumChange(builder, resourceWellAdChangeP);
+                // Round.addWellManaChange(builder, resourceWellMnChangeP);
+                // Round.addWellElixirChange(builder, resourceWellExChangeP);
                 Round.addResourceID(builder, resourceWellIDP);
                 Round.addIndicatorStringIDs(builder, indicatorStringIDsP);
                 Round.addIndicatorStrings(builder, indicatorStringsP);
