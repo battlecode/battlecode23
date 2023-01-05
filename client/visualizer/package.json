@@ -10,8 +10,7 @@
     "prod": "webpack --mode=production",
     "watch": "echo '--- open localhost:8080 in your browser ---' && webpack-dev-server --env dev",
     "electron": "webpack --mode=development --env electron --env dev && electron .",
-    "prod-electron": "webpack --mode=production --env electron && npm uninstall sharp && electron-builder -mwl --dir --x64 &&electron-builder -wl --dir --ia32",
-    "prod-electron-no-sign": "webpack --mode=production --env electron && npm uninstall sharp && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -mwl --dir --x64 && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -wl --dir --ia32",
+    "prod-electron": "webpack --mode=production --env electron && npm uninstall sharp && USE_HARD_LINKS=false electron-builder -mwl --dir --x64 && USE_HARD_LINKS=false electron-builder -wl --dir --ia32",
     "prod-test": "webpack --mode=production --env electron && npm uninstall sharp && electron-builder",
     "shrink-images": "ts-node src/image_processor.ts"
   },
@@ -45,7 +44,6 @@
     "file-loader": "^5.0.2",
     "json-loader": "^0.5.7",
     "node": "^14.15.0",
-    "sharp": "^0.31.2",
     "style-loader": "^1.0.1",
     "ts-loader": "^6.2.1",
     "tslint": "^5.20.1",
