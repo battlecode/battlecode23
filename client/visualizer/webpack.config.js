@@ -7,6 +7,8 @@ var path = require('path')
 var CopyWebpackPlugin = require('copy-webpack-plugin')
 var HtmlWebpackPlugin = require('html-webpack-plugin')
 
+console.log(path.resolve(__dirname))
+
 var conf = {
   context: path.resolve(__dirname, 'src'),
   entry: {
@@ -32,7 +34,7 @@ var conf = {
     new CopyWebpackPlugin([
       {
         from: path.resolve(__dirname, 'node_modules/speedscope/dist/release'),
-        to: path.resolve(__dirname, 'out/speedscope'),
+        to: path.resolve(__dirname, 'speedscope'),
         transform: (content, filePath) => {
           // Make speedscope's localProfilePath hash parameter support relative paths
           if (filePath.endsWith('.js')) {
@@ -44,7 +46,12 @@ var conf = {
       }
     ]),
     new HtmlWebpackPlugin({
-      template: '../index.html'
+      template: 'index2.html',
+      filename: 'index2.html'
+    }),
+    new HtmlWebpackPlugin({
+      template: 'visualizer.html',
+      filename: 'visualizer.html'
     })
   ],
   devServer: {
@@ -97,7 +104,7 @@ module.exports = function (env) {
         })
       ],
       // electron will find './out/thing.ext' but won't find '/out/thing.ext'
-      output: { publicPath: './out/' }
+      output: { publicPath: 'out/' }
     })
   } else {
     // we're compiling for the browser

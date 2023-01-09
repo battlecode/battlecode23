@@ -121,7 +121,7 @@ export default class Profiler {
   private createIFrame(): HTMLIFrameElement {
     const frame = document.createElement('iframe');
 
-    frame.src = 'out/speedscope/index.html#localProfilePath=../profiler.js';
+    frame.src = 'speedscope/index.html#localProfilePath=../profiler.js';
     frame.onload = () => {
       // Hide the Export and Import buttons in the top-right corner and certain elements on the homepage
       this.sendToIFrame('apply-css', `
