@@ -5,6 +5,7 @@ var webpack = require('webpack')
 var merge = require('webpack-merge')
 var path = require('path')
 var CopyWebpackPlugin = require('copy-webpack-plugin')
+var HtmlWebpackPlugin = require('html-webpack-plugin')
 
 var conf = {
   context: path.resolve(__dirname, 'src'),
@@ -41,7 +42,10 @@ var conf = {
           return content
         }
       }
-    ])
+    ]),
+    new HtmlWebpackPlugin({
+      template: '../index.html'
+    })
   ],
   devServer: {
     devMiddleware: {
