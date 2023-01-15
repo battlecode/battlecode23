@@ -233,7 +233,7 @@ public strictfp class Server implements Runnable {
         seenLocations.add(mapLocation);
         for (Direction dir : Direction.cardinalDirections()) {
             MapLocation newLocation = mapLocation.add(dir);
-            if (seenLocations.contains(newLocation)) {continue;}
+            if (seenLocations.contains(newLocation) || !liveMap.onTheMap(newLocation)) {continue;}
             if (islandArray[locationToIndex(liveMap, newLocation)] == currValue) {
                 extendOut(liveMap, newLocation, seenLocations);
             }
