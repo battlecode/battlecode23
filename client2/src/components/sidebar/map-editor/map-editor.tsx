@@ -110,7 +110,17 @@ export const MapEditorPage: React.FC = () => {
         let name = prompt('Enter a name for this map')
         if (!name) return
         context.state.activeGame!.currentMatch!.currentTurn!.map.staticMap.name = name ?? 'Untitled'
-        saveMapToFile(context.state.activeGame!.currentMatch!.currentTurn, name)
+
+        const turn = context.state.activeGame!.currentMatch!.currentTurn
+
+        if (process.env.ELECTRON && context.state.scaffold) {
+            context.state.scaffold.saveMap(mapToFile(turn.map, turn.bodies), name, (err: Error | null) => {
+                if (err) console.log(err)
+                else alert('Successfully exported!')
+            })
+        } else {
+            saveMapToFile(turn, name)
+        }
     }
 
     return (
@@ -166,4 +176,7 @@ export const MapEditorPage: React.FC = () => {
             </div>
         </>
     )
+}
+function mapToFile(map: CurrentMap, bodies: Bodies): Uint8Array {
+    throw new Error('Function not implemented.')
 }

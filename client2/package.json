@@ -22,6 +22,7 @@
     "@headlessui/react": "^1.7.14",
     "assert": "^2.0.0",
     "battlecode-schema": "file:../schema",
+    "electron": "^25.2.0",
     "pako": "^2.1.0",
     "process": "^0.11.10",
     "react": "^18.2.0",
@@ -46,5 +47,55 @@
     "webpack": "^5.82.0",
     "webpack-cli": "^5.0.2",
     "webpack-dev-server": "^4.13.3"
+  },
+
+  "//": "ELECTRON STUFF (copied from old client) (this is a comment)",
+  "main": "electron-main.js",
+  "build": {
+    "appId": "org.battlecode.client",
+    "productName": "Battlecode Client",
+    "compression": "maximum",
+    "files": [
+      "out/**/*",
+      "index.html",
+      "electron-main.js",
+      "node_modules/electron"
+    ],
+    "directories": {
+      "output": "../dist"
+    },
+    "fileAssociations": [
+      {
+        "ext": "bc24",
+        "name": "BC24",
+        "description": "Battlecode Match 2024",
+        "role": "Viewer",
+        "icon": "build/icon"
+      },
+      {
+        "ext": "map24",
+        "name": "MAP24",
+        "description": "Battlecode Map 2024",
+        "role": "Viewer",
+        "icon": "build/icon"
+      }
+    ],
+    "mac": {
+      "target": [
+        "dir"
+      ],
+      "category": "public.app-category.games",
+      "hardenedRuntime": "true"
+    },
+    "win": {
+      "target": [
+        "dir"
+      ]
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ]
+    }
   }
 }

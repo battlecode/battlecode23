@@ -35,3 +35,21 @@ export const RESOURCE_NAMES: Record<number, string> = {
 }
 
 export const SPEC_VERSION = '0.0.1'
+
+export enum MapType {
+    DEFAULT,
+    // SPRINT_1,
+    // SPRINT_2,
+    // INTL_QUALIFYING,
+    // US_QUALIFYING,
+    // HS_NEWBIE,
+    // FINAL,
+    CUSTOM
+}
+
+export const SERVER_MAPS: Map<string, MapType> = new Map<string, MapType>([
+    ['AllElements', MapType.DEFAULT],
+    ['DefaultMap', MapType.DEFAULT],
+    ['maptestsmall', MapType.DEFAULT],
+    ['SmallElements', MapType.DEFAULT]
+])
