@@ -1,12 +1,13 @@
 {
   "name": "battlecode-client",
-  "version": "2023.0.0",
+  "version": "2024.0.0",
   "description": "Battlecode client",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "fix-schema": "(cd ../schema && npm i && cd ../client2 && rimraf node_modules/battlecode-schema && npm i)",
     "watch": "set NODE_ENV=development && webpack serve --config webpack.config.js --mode development --env dev",
-    "build": "set NODE_ENV=production && webpack build --config webpack.config.js --mode production"
+    "build": "set NODE_ENV=production && webpack build --config webpack.config.js --mode production",
+    "electron": "webpack --mode=development --env electron --env dev && electron ."
   },
   "repository": {
     "type": "git",
@@ -50,7 +51,7 @@
   },
 
   "//": "ELECTRON STUFF (copied from old client) (this is a comment)",
-  "main": "electron-main.js",
+  "main": "src/electron/electron-main.js",
   "build": {
     "appId": "org.battlecode.client",
     "productName": "Battlecode Client",
