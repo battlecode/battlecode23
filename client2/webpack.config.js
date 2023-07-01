@@ -1,6 +1,7 @@
 const webpack = require('webpack')
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = (env) => {
     const development = env.dev
@@ -56,7 +57,12 @@ module.exports = (env) => {
             }),
             new webpack.ProvidePlugin({
                 process: 'process/browser'
-            })
+            }),
+            new CopyPlugin({
+                patterns: [
+                    { from: 'src/static/img', to: 'static/img' },
+                ],
+            }),
         ]
     }
 
